@@ -13,6 +13,9 @@ namespace MVCBookList.Controllers
 
         private readonly ApplicationDbContext _context;
 
+        [BindProperty]
+        public Book Book { get; set; }
+
         public BooksController(ApplicationDbContext context)
         {
             _context = context;
@@ -20,6 +23,44 @@ namespace MVCBookList.Controllers
         public IActionResult Index()
         {
             return View();
+        }
+
+        public IActionResult Upsert(int? id)
+        {
+            Book = new Book();
+            if (id == null)
+            {
+                //Create Book request
+                return View(Book);
+            }
+            //Update Book request
+            Book = _context.Book.FirstOrDefault(u => u.Id == id);
+            if(Book == null)
+            {
+                return NotFound();
+            }
+            return View();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Upsert()
+        {
+            if (ModelState.IsValid)
+            {
+                if(Book.Id == 0)
+                {
+                    //Create Book
+                    _context.Book.Add(Book);
+                }
+                else
+                {
+                    //Update Book
+                    _context.Book.Update(Book);
+                }
+                _context.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(Book);
         }
 
         #region APICalls
